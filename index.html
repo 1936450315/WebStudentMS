@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>学生管理系统 · Web V2.0</title>
+<style>
+  /* ============================================================
+     设计系统 Tokens（design-hub：Primitive → Semantic → Component）
+     产品类型：教育 / SaaS → 蓝紫主色，中性灰辅助
+     ============================================================ */
+  :root {
+    /* Primitive */
+    --blue-600: #2563eb;
+    --blue-700: #1d4ed8;
+    --violet-600: #7c3aed;
+    --slate-50: #f8fafc;
+    --slate-100: #f1f5f9;
+    --slate-200: #e2e8f0;
+    --slate-300: #cbd5e1;
+    --slate-500: #64748b;
+    --slate-600: #475569;
+    --slate-900: #0f172a;
+
+    /* Semantic */
+    --primary: var(--blue-600);
+    --primary-700: var(--blue-700);
+    --accent: var(--violet-600);
+    --bg: #f5f7fb;
+    --surface: #ffffff;
+    --surface-2: var(--slate-50);
+    --border: #e6ebf3;
+    --border-strong: #d3dbe8;
+    --text: var(--slate-900);
+    --text-2: var(--slate-600);
+    --muted: var(--slate-500);
+    --success: #059669;
+    --success-bg: #ecfdf5;
+    --danger: #dc2626;
+    --danger-bg: #fef2f2;
+    --warning: #b45309;
+    --warning-bg: #fffbeb;
+
+    /* Component */
+    --radius-sm: 10px;
+    --radius: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, .05);
+    --shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 8px 24px rgba(15, 23, 42, .06);
+    --shadow-lg: 0 24px 60px rgba(15, 23, 42, .18);
+    --ring: 0 0 0 4px rgba(37, 99, 235, .14);
+    --font: "Inter", "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+    --mono: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--text);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+  }
+  .hidden { display: none !important; }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
+  :focus-visible { outline: 3px solid rgba(37, 99, 235, .45); outline-offset: 2px; border-radius: 6px; }
+
+  /* ============================== 登录 ============================== */
+  .login-wrap {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background:
+      radial-gradient(1100px 620px at 8% -8%, #e0e7ff 0%, rgba(224, 231, 255, 0) 60%),
+      radial-gradient(900px 560px at 108% 108%, #ede9fe 0%, rgba(237, 233, 254, 0) 60%),
+      var(--bg);
+  }
+  .login-card {
+    width: 100%;
+    max-width: 420px;
+    background: rgba(255, 255, 255, .92);
+    border: 1px solid rgba(255, 255, 255, .85);
+    border-radius: var(--radius-xl);
+    padding: 36px 32px 28px;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, .13), 0 2px 8px rgba(15, 23, 42, .05);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+  .brand-head { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
+  .mark {
+    width: 52px; height: 52px; flex: none;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 16px; color: #fff;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    box-shadow: 0 10px 24px rgba(37, 99, 235, .35);
+  }
+  .mark svg { width: 28px; height: 28px; }
+  .brand-head h1 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -.2px; }
+  .brand-head p { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field > label { font-size: 13px; font-weight: 600; color: var(--text-2); }
+  .req { color: #e11d48; }
+  .input, .select {
+    width: 100%; min-height: 44px;
+    padding: 0 12px;
+    font-family: var(--font); font-size: 16px; color: var(--text);
+    background: var(--surface);
+    border: 1.5px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .input::placeholder { color: #9aa8be; }
+  .input:focus, .select:focus { outline: none; border-color: var(--primary); box-shadow: var(--ring); }
+  .input[readonly] { background: var(--surface-2); color: var(--muted); }
+  .input-mono { font-family: var(--mono); font-size: 13px; }
+  .select { appearance: none; -webkit-appearance: none; cursor: pointer; padding-right: 36px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center; }
+
+  .pw-wrap { position: relative; }
+  .pw-wrap .input { padding-right: 48px; }
+  .pw-toggle {
+    position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+    width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+    border: none; border-radius: 8px; background: transparent; color: var(--muted);
+    cursor: pointer; transition: background .15s ease, color .15s ease;
+  }
+  .pw-toggle:hover { background: var(--slate-100); color: var(--text-2); }
+  .pw-toggle svg { width: 18px; height: 18px; }
+
+  .form-error { margin: 10px 0 0; font-size: 13px; color: var(--danger); background: var(--danger-bg); border: 1px solid #fecaca; border-radius: var(--radius-sm); padding: 10px 12px; line-height: 1.45; }
+
+  .login-form { display: grid; gap: 16px; }
+  .login-form .btn { margin-top: 4px; }
+  .btn-block { width: 100%; }
+
+  .login-foot { display: flex; align-items: center; gap: 10px; margin-top: 22px; padding-top: 16px; border-top: 1px dashed var(--border-strong); }
+  .foot-label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .foot-input { min-height: 36px; font-size: 12px; text-align: right; padding: 0 8px; }
+  .login-hint { margin: 14px 0 0; text-align: center; font-size: 12px; color: var(--muted); }
+  .mono { font-family: var(--mono); }
+
+  /* ============================== 按钮 ============================== */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 44px; padding: 0 16px;
+    font-family: var(--font); font-size: 14px; font-weight: 600;
+    border: 1.5px solid transparent; border-radius: var(--radius-sm);
+    cursor: pointer; white-space: nowrap;
+    transition: transform .15s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease, color .15s ease;
+  }
+  .btn svg { width: 18px; height: 18px; }
+  .btn:disabled { opacity: .55; cursor: not-allowed; }
+  .btn-primary { color: #fff; background: linear-gradient(135deg, #2563eb, #4f46e5); box-shadow: 0 6px 16px rgba(37, 99, 235, .28); }
+  .btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(37, 99, 235, .36); }
+  .btn-primary:active:not(:disabled) { transform: translateY(0); }
+  .btn-secondary { background: var(--surface); border-color: var(--border-strong); color: var(--text-2); }
+  .btn-secondary:hover:not(:disabled) { background: var(--surface-2); border-color: #c2ccdd; color: var(--text); }
+  .btn-danger { color: #fff; background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 6px 16px rgba(220, 38, 38, .3); }
+  .btn-danger:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(220, 38, 38, .38); }
+  .btn-danger-ghost { background: var(--surface); border-color: #fecaca; color: var(--danger); }
+  .btn-danger-ghost:hover:not(:disabled) { background: var(--danger-bg); border-color: #fca5a5; }
+  .btn-sm { min-height: 38px; padding: 0 12px; font-size: 13px; border-radius: 9px; }
+  .btn-sm svg { width: 16px; height: 16px; }
+  .btn-xs { min-height: 34px; padding: 0 10px; font-size: 12.5px; border-radius: 8px; }
+  .icon-btn {
+    width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+    border: none; border-radius: 10px; background: transparent; color: var(--muted);
+    cursor: pointer; transition: background .15s ease, color .15s ease;
+  }
+  .icon-btn:hover { background: var(--slate-100); color: var(--text); }
+  .icon-btn svg { width: 18px; height: 18px; }
+
+  /* ============================== 顶栏 ============================== */
+  .topbar {
+    position: sticky; top: 0; z-index: 20;
+    background: rgba(255, 255, 255, .86);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .topbar-inner {
+    max-width: 1120px; margin: 0 auto; padding: 0 24px;
+    height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .mark-sm { width: 36px; height: 36px; border-radius: 11px; box-shadow: 0 6px 14px rgba(37, 99, 235, .3); }
+  .mark-sm svg { width: 20px; height: 20px; }
+  .brand-name { font-size: 15px; font-weight: 700; letter-spacing: -.1px; }
+  .brand-badge {
+    margin-left: 8px; font-size: 10.5px; font-weight: 700; letter-spacing: .4px;
+    color: var(--primary); background: #eff6ff; border: 1px solid #dbeafe;
+    border-radius: 999px; padding: 2px 8px; vertical-align: 2px;
+  }
+  .topbar-right { display: flex; align-items: center; gap: 14px; min-width: 0; }
+  .api-host { font-family: var(--mono); font-size: 11.5px; color: var(--muted); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+  .user { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .avatar {
+    width: 36px; height: 36px; flex: none; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: #fff;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    box-shadow: 0 4px 10px rgba(37, 99, 235, .28);
+  }
+  .user-meta { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .user-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
+  .role-badge { font-size: 10.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+
+  /* ============================== 页面主体 ============================== */
+  .page { max-width: 1120px; margin: 0 auto; padding: 28px 24px 64px; }
+  .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  .page-head h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -.3px; }
+  .page-head .sub { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
+  .page-actions { display: flex; align-items: center; gap: 10px; }
+
+  .banner {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 16px; padding: 11px 14px;
+    font-size: 13px; color: var(--warning);
+    background: var(--warning-bg); border: 1px solid #fde68a; border-radius: var(--radius);
+  }
+  .banner svg { width: 17px; height: 17px; flex: none; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; }
+  .card-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  .toolbar-left, .toolbar-right { display: flex; align-items: center; gap: 10px; }
+  .pill { font-size: 12px; font-weight: 700; color: var(--primary); background: #eff6ff; border: 1px solid #dbeafe; border-radius: 999px; padding: 3px 10px; }
+  .muted { font-size: 12.5px; color: var(--muted); }
+  .size-label { font-size: 12.5px; color: var(--muted); }
+  .select-sm { min-height: 34px; width: auto; min-width: 76px; font-size: 13px; border-radius: 8px; }
+
+  .table-wrap { overflow-x: auto; position: relative; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  thead th {
+    position: sticky; top: 0; z-index: 1;
+    text-align: left; white-space: nowrap;
+    padding: 11px 18px;
+    font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px;
+    color: var(--muted); background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+  }
+  tbody td { padding: 13px 18px; border-bottom: 1px solid var(--border); color: var(--text); white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:nth-child(even) { background: #f9fbfe; }   /* 斑马纹 */
+  tbody tr { transition: background .12s ease; }
+  tbody tr:hover { background: #eef4ff; }             /* 悬停高亮 */
+  td.cell-sid { font-family: var(--mono); font-size: 13px; color: var(--text-2); }
+  td.cell-name { font-weight: 600; }
+  td.cell-actions { text-align: right; }
+  .row-actions { display: inline-flex; gap: 8px; }
+
+  .badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 2px 10px; font-size: 11.5px; font-weight: 700; }
+  .badge-admin { color: #6d28d9; background: #f5f3ff; box-shadow: inset 0 0 0 1px #ede9fe; }
+  .badge-student { color: #047857; background: #ecfdf5; box-shadow: inset 0 0 0 1px #d1fae5; }
+
+  .empty { padding: 56px 20px; text-align: center; }
+  .empty svg { width: 40px; height: 40px; color: var(--slate-300); margin-bottom: 10px; }
+  .empty p { margin: 0 0 14px; font-size: 13.5px; color: var(--muted); }
+
+  .card-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 18px; border-top: 1px solid var(--border); background: var(--surface); }
+  .pager { display: flex; gap: 8px; }
+
+  /* ============================== 对话框 ============================== */
+  dialog { padding: 0; border: none; background: transparent; max-width: 100%; max-height: 100%; }
+  dialog::backdrop { background: rgba(15, 23, 42, .48); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+  .dialog-card {
+    width: min(94vw, 540px);
+    background: var(--surface); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg); padding: 22px 24px 24px;
+    animation: dialog-in .18s ease both;
+  }
+  @keyframes dialog-in { from { opacity: 0; transform: translateY(8px) scale(.985); } to { opacity: 1; transform: none; } }
+  .dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .dialog-head h2 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -.2px; }
+  .dialog-sub { margin: 6px 0 18px; font-size: 13px; color: var(--muted); }
+  .dialog-danger .dialog-sub { margin-bottom: 0; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-grid .span-2 { grid-column: 1 / -1; }
+  .dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+  .dialog-error { grid-column: 1 / -1; }
+
+  /* ============================== Toast ============================== */
+  .toasts { position: fixed; top: 16px; right: 16px; z-index: 80; display: flex; flex-direction: column; gap: 10px; width: min(92vw, 380px); pointer-events: none; }
+  .toast {
+    pointer-events: auto;
+    display: flex; align-items: flex-start; gap: 10px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px 14px; box-shadow: 0 12px 30px rgba(15, 23, 42, .14);
+    animation: toast-in .22s ease both;
+  }
+  .toast.out { opacity: 0; transform: translateX(12px); transition: opacity .25s ease, transform .25s ease; }
+  @keyframes toast-in { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+  .toast-icon { width: 22px; height: 22px; flex: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+  .toast-icon svg { width: 13px; height: 13px; }
+  .toast.success { border-color: #a7f3d0; }
+  .toast.success .toast-icon { background: var(--success-bg); color: var(--success); }
+  .toast.error { border-color: #fecaca; }
+  .toast.error .toast-icon { background: var(--danger-bg); color: var(--danger); }
+  .toast-text { font-size: 13px; line-height: 1.55; color: var(--text-2); word-break: break-word; }
+  .toast-text strong { color: var(--text); }
+
+  /* ============================== 工作台 / 公告面板 ============================== */
+  .tabs { display: inline-flex; gap: 4px; padding: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-sm); margin-bottom: 22px; }
+  .tab {
+    min-height: 38px; padding: 0 16px; border: none; border-radius: 9px; background: transparent;
+    font-family: var(--font); font-size: 13.5px; font-weight: 600; color: var(--muted);
+    cursor: pointer; transition: background .15s ease, color .15s ease;
+  }
+  .tab:hover { color: var(--text); background: var(--surface-2); }
+  .tab.is-active { color: var(--primary); background: #eff6ff; }
+
+  .view { animation: fade-up .22s ease both; }
+  @keyframes fade-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  .welcome {
+    position: relative; overflow: hidden;
+    display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+    padding: 26px 28px; margin-bottom: 20px;
+    border-radius: var(--radius-lg); color: #fff;
+    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 45%, #6d28d9 100%);
+    box-shadow: 0 14px 34px rgba(37, 99, 235, .28);
+  }
+  .welcome::before, .welcome::after {
+    content: ""; position: absolute; border-radius: 50%; pointer-events: none; background: rgba(255, 255, 255, .12);
+  }
+  .welcome::before { width: 220px; height: 220px; right: -60px; top: -90px; }
+  .welcome::after { width: 140px; height: 140px; right: 120px; bottom: -80px; background: rgba(255, 255, 255, .08); }
+  .welcome-main { position: relative; z-index: 1; }
+  .welcome-eyebrow { margin: 0 0 6px; font-size: 12px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: rgba(255, 255, 255, .75); }
+  .welcome h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.4px; }
+  .welcome-sub { margin: 8px 0 0; font-size: 13.5px; color: rgba(255, 255, 255, .82); }
+  .welcome-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .welcome-chip {
+    font-size: 12px; font-weight: 600; color: #fff; background: rgba(255, 255, 255, .16);
+    border: 1px solid rgba(255, 255, 255, .28); border-radius: 999px; padding: 3px 10px;
+  }
+  .welcome-date { position: relative; z-index: 1; font-size: 13px; color: rgba(255, 255, 255, .8); }
+
+  .home-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+  .home-side { display: grid; gap: 18px; }
+  .card-title { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: -.1px; }
+  .ann-card .card-toolbar { padding: 16px 18px 12px; }
+  .ann-toolbar { border-bottom: 1px solid var(--border); }
+  .ann-toolbar .toolbar-left { gap: 8px; }
+
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 18px; border-bottom: 1px solid var(--border); }
+  .chip {
+    min-height: 32px; padding: 0 12px; border-radius: 999px;
+    border: 1.5px solid var(--border-strong); background: var(--surface); color: var(--muted);
+    font-family: var(--font); font-size: 12.5px; font-weight: 600; cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+  }
+  .chip:hover { background: var(--surface-2); color: var(--text-2); }
+  .chip.is-active { background: #eff6ff; border-color: #bfdbfe; color: var(--primary); }
+
+  .ann-list { display: flex; flex-direction: column; }
+  .ann {
+    display: flex; gap: 12px; width: 100%;
+    padding: 16px 18px; border: none; border-bottom: 1px solid var(--border);
+    background: transparent; text-align: left; cursor: pointer;
+    font-family: var(--font); transition: background .12s ease;
+  }
+  .ann:last-child { border-bottom: none; }
+  .ann:hover { background: var(--surface-2); }
+  .ann.pinned { background: #f7f9ff; box-shadow: inset 3px 0 0 var(--primary); }
+  .ann-dot { width: 8px; height: 8px; flex: none; margin-top: 7px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, .14); }
+  .ann-main { min-width: 0; flex: 1; }
+  .ann-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 5px; }
+  .ann-title { margin: 0; display: block; font-size: 14.5px; font-weight: 600; color: var(--text); line-height: 1.45; }
+  .ann.unread .ann-title { font-weight: 700; }
+  .ann-excerpt {
+    margin: 6px 0 0; font-size: 13px; line-height: 1.6; color: var(--muted);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .ann-time { font-size: 12px; color: var(--muted); }
+  .ann-empty { margin: 0; padding: 42px 20px; text-align: center; font-size: 13px; color: var(--muted); }
+
+  .tag { display: inline-flex; align-items: center; border-radius: 6px; padding: 1px 8px; font-size: 11.5px; font-weight: 700; }
+  .tag-system { color: #1d4ed8; background: #eff6ff; box-shadow: inset 0 0 0 1px #dbeafe; }
+  .tag-teach { color: #6d28d9; background: #f5f3ff; box-shadow: inset 0 0 0 1px #ede9fe; }
+  .tag-event { color: #047857; background: #ecfdf5; box-shadow: inset 0 0 0 1px #d1fae5; }
+  .tag-urgent { color: #be123c; background: #fff1f2; box-shadow: inset 0 0 0 1px #fecdd3; }
+  .pin-tag { font-size: 11px; font-weight: 700; color: var(--primary); background: #eff6ff; border-radius: 6px; padding: 1px 7px; }
+
+  .quick-card, .profile-card { padding: 18px; }
+  .quick-actions { display: grid; gap: 8px; margin-top: 14px; }
+  .quick-btn {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    min-height: 44px; padding: 0 14px;
+    border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--surface); color: var(--text-2);
+    font-family: var(--font); font-size: 13.5px; font-weight: 600; cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+  }
+  .quick-btn:hover { background: var(--surface-2); border-color: var(--border-strong); color: var(--text); }
+  .quick-btn svg { width: 16px; height: 16px; color: var(--muted); }
+  .profile-list { margin: 14px 0 0; display: grid; gap: 10px; }
+  .profile-list > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; }
+  .profile-list dt { color: var(--muted); }
+  .profile-list dd { margin: 0; font-weight: 600; color: var(--text); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%; }
+
+  .ann-dialog-meta { display: flex; align-items: center; gap: 10px; margin: 10px 0 14px; }
+  .ann-dialog-body { margin: 0; font-size: 14px; line-height: 1.75; color: var(--text-2); white-space: pre-wrap; }
+
+  /* ============================== 响应式 / 动效 ============================== */
+  @media (max-width: 640px) {
+    .topbar-inner { padding: 0 16px; height: 58px; gap: 10px; }
+    .api-host { display: none; }
+    .user-meta { display: none; }
+    .page { padding: 20px 16px 48px; }
+    .page-head { align-items: flex-start; }
+    .page-head h1 { font-size: 20px; }
+    .page-actions { width: 100%; }
+    .page-actions .btn { flex: 1; }
+    .form-grid { grid-template-columns: 1fr; }
+    .login-card { padding: 28px 22px 22px; }
+    .card-footer { justify-content: center; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     登录视图
+     ============================================================ -->
+<main id="login-view" class="login-wrap">
+  <section class="login-card" aria-labelledby="login-title">
+    <div class="brand-head">
+      <div class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m22 9-10-5L2 9l10 5 10-5Z"/><path d="M6 11.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-4.5"/><path d="M22 9v6"/>
+        </svg>
+      </div>
+      <div>
+        <h1 id="login-title">学生管理系统</h1>
+        <p>Web V2.0 · 学生数据管理平台</p>
+      </div>
+    </div>
+
+    <form id="login-form" class="login-form" novalidate>
+      <div class="field">
+        <label for="login-sid">学号</label>
+        <input id="login-sid" class="input input-mono" inputmode="numeric" autocomplete="username"
+               placeholder="例如 2025001" aria-describedby="login-error">
+      </div>
+      <div class="field">
+        <label for="login-pass">密码</label>
+        <div class="pw-wrap">
+          <input id="login-pass" class="input" type="password" autocomplete="current-password"
+                 placeholder="请输入密码" aria-describedby="login-error">
+          <button type="button" id="pw-toggle" class="pw-toggle" aria-label="显示密码" aria-pressed="false">
+            <svg id="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+            <svg id="eye-closed" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 3l18 18"/><path d="M10.6 5.1A10.9 10.9 0 0 1 12 5c6.5 0 10 7 10 7a18.5 18.5 0 0 1-3.2 4.2"/><path d="M6.6 6.6C4 8.3 2 12 2 12s3.5 7 10 7a10.6 10.6 0 0 0 4.3-.9"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <p id="login-error" class="form-error hidden" role="alert"></p>
+
+      <button type="submit" id="login-btn" class="btn btn-primary btn-block">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/>
+        </svg>
+        登 录
+      </button>
+    </form>
+
+    <div class="login-foot">
+      <label for="base-url" class="foot-label">后端地址</label>
+      <input id="base-url" class="input input-mono foot-input" spellcheck="false" aria-label="后端地址">
+    </div>
+    <p class="login-hint">初始管理员 <span class="mono">2025001 / 1234</span> · 首次启动自动创建</p>
+  </section>
+</main>
+
+<!-- ============================================================
+     管理台视图
+     ============================================================ -->
+<div id="app" class="hidden">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="mark mark-sm" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m22 9-10-5L2 9l10 5 10-5Z"/><path d="M6 11.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-4.5"/><path d="M22 9v6"/>
+          </svg>
+        </div>
+        <span class="brand-name">学生管理系统</span>
+        <span class="brand-badge">V2.0</span>
+      </div>
+
+      <div class="topbar-right">
+        <span id="api-host" class="api-host" title="当前后端地址"></span>
+        <div class="user">
+          <span id="user-avatar" class="avatar" aria-hidden="true">学</span>
+          <span class="user-meta">
+            <span id="user-name" class="user-name">—</span>
+            <span id="user-role" class="role-badge">—</span>
+          </span>
+        </div>
+        <button id="logout-btn" type="button" class="btn btn-secondary btn-sm">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>
+          </svg>
+          退出
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <nav class="tabs" role="tablist" aria-label="视图切换">
+      <button type="button" class="tab is-active" role="tab" aria-selected="true" data-view="home">工作台</button>
+      <button type="button" class="tab" role="tab" aria-selected="false" data-view="students">学生管理</button>
+    </nav>
+
+    <!-- 工作台 -->
+    <section id="view-home" class="view" aria-label="工作台">
+      <div class="welcome">
+        <div class="welcome-main">
+          <p class="welcome-eyebrow">工作台</p>
+          <h1 id="welcome-title">上午好，同学</h1>
+          <p class="welcome-sub" id="welcome-sub">这里是学生管理系统的公告与快捷入口</p>
+          <div class="welcome-meta">
+            <span class="welcome-chip" id="welcome-role">学生</span>
+            <span class="welcome-chip" id="welcome-sid">学号 —</span>
+          </div>
+        </div>
+        <p class="welcome-date" id="welcome-date"></p>
+      </div>
+
+      <div class="home-grid">
+        <section class="card ann-card" aria-labelledby="ann-heading">
+          <div class="card-toolbar ann-toolbar">
+            <div class="toolbar-left">
+              <h2 id="ann-heading" class="card-title">公告</h2>
+              <span id="ann-unread" class="pill">0 条未读</span>
+            </div>
+            <button id="ann-mark-all" type="button" class="btn btn-secondary btn-sm">全部已读</button>
+          </div>
+
+          <div class="chips" role="group" aria-label="按分类筛选公告">
+            <button type="button" class="chip is-active" data-cat="all" aria-pressed="true">全部</button>
+            <button type="button" class="chip" data-cat="系统" aria-pressed="false">系统</button>
+            <button type="button" class="chip" data-cat="教学" aria-pressed="false">教学</button>
+            <button type="button" class="chip" data-cat="活动" aria-pressed="false">活动</button>
+            <button type="button" class="chip" data-cat="紧急" aria-pressed="false">紧急</button>
+          </div>
+
+          <div id="ann-list" class="ann-list" aria-live="polite"></div>
+          <p id="ann-empty" class="ann-empty hidden">该分类下暂无公告</p>
+        </section>
+
+        <aside class="home-side">
+          <section class="card quick-card" aria-labelledby="quick-heading">
+            <h2 id="quick-heading" class="card-title">快捷操作</h2>
+            <div class="quick-actions">
+              <button type="button" class="quick-btn" data-goto="students">
+                学生管理
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+              <button type="button" class="quick-btn" id="quick-add">
+                添加学生
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+              </button>
+              <button type="button" class="quick-btn" id="quick-refresh">
+                刷新学生列表
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+              </button>
+            </div>
+          </section>
+
+          <section class="card profile-card" aria-labelledby="profile-heading">
+            <h2 id="profile-heading" class="card-title">账号信息</h2>
+            <dl class="profile-list">
+              <div><dt>学号</dt><dd id="profile-sid" class="mono">—</dd></div>
+              <div><dt>姓名</dt><dd id="profile-name">—</dd></div>
+              <div><dt>角色</dt><dd id="profile-role">—</dd></div>
+              <div><dt>后端地址</dt><dd id="profile-api" class="mono">—</dd></div>
+            </dl>
+          </section>
+        </aside>
+      </div>
+    </section>
+
+    <!-- 学生管理 -->
+    <section id="view-students" class="view hidden" aria-label="学生管理">
+    <div class="page-head">
+      <div>
+        <h1>学生列表</h1>
+        <p class="sub" id="page-sub">查看、新增、编辑和删除学生信息</p>
+      </div>
+      <div class="page-actions">
+        <button id="refresh-btn" type="button" class="btn btn-secondary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>
+          </svg>
+          刷新
+        </button>
+        <button id="add-btn" type="button" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          添加学生
+        </button>
+      </div>
+    </div>
+
+    <div id="readonly-banner" class="banner hidden" role="status">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><path d="M12 8v5"/><path d="M12 16h.01"/>
+      </svg>
+      当前账号不是管理员，仅可查看列表；新增、编辑、删除需要管理员账号。
+    </div>
+
+    <section class="card" aria-labelledby="table-heading">
+      <h2 id="table-heading" class="sr-only">学生列表</h2>
+
+      <div class="card-toolbar">
+        <div class="toolbar-left">
+          <span id="range-pill" class="pill">0 条</span>
+          <span id="range-note" class="muted">第 1 页</span>
+        </div>
+        <div class="toolbar-right">
+          <label class="size-label" for="page-size">每页</label>
+          <select id="page-size" class="select select-sm">
+            <option value="10" selected>10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="table-wrap" class="table-wrap" aria-busy="false">
+        <table>
+          <caption class="sr-only">学生信息表：学号、姓名、年龄、性别、角色与操作</caption>
+          <thead>
+            <tr>
+              <th scope="col">学号</th>
+              <th scope="col">姓名</th>
+              <th scope="col">年龄</th>
+              <th scope="col">性别</th>
+              <th scope="col">角色</th>
+              <th scope="col" style="text-align:right">操作</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+
+        <div id="table-empty" class="empty hidden">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/>
+          </svg>
+          <p id="empty-text">暂无学生，点击右上角「添加学生」创建第一条记录</p>
+          <button id="empty-retry" type="button" class="btn btn-secondary btn-sm hidden">重试</button>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <span id="footer-info" class="muted">—</span>
+        <div class="pager">
+          <button id="prev-btn" type="button" class="btn btn-secondary btn-sm" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m15 18-6-6 6-6"/>
+            </svg>
+            上一页
+          </button>
+          <button id="next-btn" type="button" class="btn btn-secondary btn-sm" disabled>
+            下一页
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m9 18 6-6-6-6"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </section>
+    </section>
+  </main>
+</div>
+
+<!-- ============================================================
+     添加 / 编辑对话框
+     ============================================================ -->
+<dialog id="student-dialog" aria-labelledby="student-dialog-title">
+  <form id="student-form" class="dialog-card" novalidate>
+    <div class="dialog-head">
+      <h2 id="student-dialog-title">添加学生</h2>
+      <button type="button" class="icon-btn" data-close aria-label="关闭">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 6 6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <p id="student-dialog-sub" class="dialog-sub">创建一条新的学生记录</p>
+
+    <div class="form-grid">
+      <div class="field">
+        <label for="f-sid">学号 <span class="req">*</span></label>
+        <input id="f-sid" class="input input-mono" inputmode="numeric" placeholder="2025002">
+      </div>
+      <div class="field">
+        <label for="f-name">姓名 <span class="req">*</span></label>
+        <input id="f-name" class="input" placeholder="李四">
+      </div>
+      <div class="field">
+        <label for="f-age">年龄 <span class="req">*</span></label>
+        <input id="f-age" class="input" inputmode="numeric" placeholder="19">
+      </div>
+      <div class="field">
+        <label for="f-sex">性别</label>
+        <select id="f-sex" class="select">
+          <option value="男">男</option>
+          <option value="女">女</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-role">角色</label>
+        <select id="f-role" class="select">
+          <option value="student">student</option>
+          <option value="admin">admin</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-pass"><span id="f-pass-label">密码 <span class="req">*</span></span></label>
+        <input id="f-pass" class="input" type="text" placeholder="初始密码">
+      </div>
+
+      <p id="dialog-error" class="form-error dialog-error hidden" role="alert"></p>
+    </div>
+
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-secondary" data-close>取消</button>
+      <button type="submit" id="student-submit" class="btn btn-primary">保存</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ============================================================
+     删除确认对话框
+     ============================================================ -->
+<dialog id="delete-dialog" aria-labelledby="delete-title">
+  <div class="dialog-card dialog-danger">
+    <div class="dialog-head">
+      <h2 id="delete-title">删除学生</h2>
+      <button type="button" class="icon-btn" data-close aria-label="关闭">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 6 6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <p id="delete-text" class="dialog-sub">确定要删除该学生吗？</p>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-secondary" data-close>取消</button>
+      <button type="button" id="delete-confirm" class="btn btn-danger">确认删除</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- ============================================================
+     公告详情对话框
+     ============================================================ -->
+<dialog id="ann-dialog" aria-labelledby="ann-dialog-title">
+  <div class="dialog-card">
+    <div class="dialog-head">
+      <h2 id="ann-dialog-title">公告</h2>
+      <button type="button" class="icon-btn" data-close aria-label="关闭">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 6 6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="ann-dialog-meta">
+      <span id="ann-dialog-cat" class="tag tag-system">系统</span>
+      <span id="ann-dialog-time" class="ann-time"></span>
+    </div>
+    <p id="ann-dialog-body" class="ann-dialog-body"></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-secondary" data-close>关闭</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Toast 容器 -->
+<div id="toasts" class="toasts" aria-live="polite" aria-atomic="false"></div>
+
+<script>
+'use strict';
+
+/* ============================================================
+   工具
+   ============================================================ */
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+const STORAGE = {
+  base: 'webv2_base_url',
+  auth: 'webv2_auth',
+  annRead: 'webv2_ann_read'
+};
+
+const state = {
+  baseUrl: 'http://127.0.0.1:8080',
+  auth: null,          // { sid, name, role }
+  view: 'home',
+  page: 1,
+  pageSize: 10,
+  items: [],
+  hasNext: false,
+  dialogMode: 'add',
+  editingSid: null,
+  deletingSid: null,
+  annCategory: 'all',
+  annRead: [],
+  loading: false
+};
+
+function readLS(key, fallback) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; }
+}
+function writeLS(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* file:// 下可能受限，忽略 */ }
+}
+function removeLS(key) { try { localStorage.removeItem(key); } catch (e) { /* ignore */ } }
+
+const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+}[c]));
+
+const isAdmin = () => !!state.auth && state.auth.role === 'admin';
+
+function apiBase() { return state.baseUrl.replace(/\/+$/, ''); }
+
+/* ============================================================
+   公告（前端示例数据：后端暂未提供公告接口，接入时替换此数组即可）
+   ============================================================ */
+const ANNOUNCEMENTS = [
+  {
+    id: 'ann-1',
+    category: '教学',
+    title: '2025 春季学期选课安排',
+    time: '今天 09:00',
+    pinned: true,
+    body: '本学期选课系统将于 3 月 12 日 10:00 开放，3 月 18 日 22:00 关闭。请同学们登录教务系统完成选课，逾期不再补选。选修课学分要求见培养方案。'
+  },
+  {
+    id: 'ann-2',
+    category: '系统',
+    title: '学生管理系统维护公告',
+    time: '昨天 18:20',
+    body: '系统将于本周六 00:00–02:00 进行数据库升级，期间登录接口可能短暂不可用，请提前保存工作。'
+  },
+  {
+    id: 'ann-3',
+    category: '活动',
+    title: '春季运动会报名开始',
+    time: '3 天前',
+    body: '运动会将于 4 月 12 日举行，即日起至 3 月 31 日接受报名。项目包括 100 米、4×100 米接力、跳远、拔河等，欢迎踊跃参加。'
+  },
+  {
+    id: 'ann-4',
+    category: '紧急',
+    title: '关于加强账号安全管理的提醒',
+    time: '5 天前',
+    body: '近期出现多起账号异常登录。请勿将学号密码告知他人，不要在其他网站使用相同密码。如发现异常请及时联系管理员。'
+  }
+];
+
+function categoryTagClass(cat) {
+  return { '系统': 'tag-system', '教学': 'tag-teach', '活动': 'tag-event', '紧急': 'tag-urgent' }[cat] || 'tag-system';
+}
+
+function saveAnnRead() { writeLS(STORAGE.annRead, state.annRead); }
+
+function unreadCount() {
+  return ANNOUNCEMENTS.filter((ann) => state.annRead.indexOf(ann.id) === -1).length;
+}
+
+function renderWelcome() {
+  const auth = state.auth || {};
+  const hour = new Date().getHours();
+  const greet = hour < 6 ? '夜深了' : hour < 11 ? '早上好' : hour < 13 ? '中午好' : hour < 19 ? '下午好' : '晚上好';
+  $('#welcome-title').textContent = greet + '，' + (auth.name || '同学');
+  $('#welcome-role').textContent = auth.role === 'admin' ? '管理员' : '学生';
+  $('#welcome-sid').textContent = '学号 ' + (auth.sid || '—');
+  $('#welcome-date').textContent = new Date().toLocaleDateString('zh-CN', {
+    year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'
+  });
+}
+
+function renderAnnouncements() {
+  const list = $('#ann-list');
+  list.innerHTML = '';
+
+  const unread = unreadCount();
+  $('#ann-unread').textContent = unread ? unread + ' 条未读' : '全部已读';
+  $('#ann-mark-all').disabled = unread === 0;
+
+  let items = ANNOUNCEMENTS.slice();
+  items.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));   // 置顶优先
+  if (state.annCategory !== 'all') items = items.filter((ann) => ann.category === state.annCategory);
+
+  $('#ann-empty').classList.toggle('hidden', items.length > 0);
+
+  items.forEach((ann) => {
+    const read = state.annRead.indexOf(ann.id) !== -1;
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'ann' + (ann.pinned ? ' pinned' : '') + (read ? '' : ' unread');
+    item.innerHTML =
+      '<span class="ann-dot' + (read ? ' hidden' : '') + '" aria-hidden="true"></span>' +
+      '<span class="ann-main">' +
+        '<span class="ann-meta">' +
+          '<span class="tag ' + categoryTagClass(ann.category) + '">' + esc(ann.category) + '</span>' +
+          (ann.pinned ? '<span class="pin-tag">置顶</span>' : '') +
+          '<span class="ann-time">' + esc(ann.time) + '</span>' +
+        '</span>' +
+        '<span class="ann-title">' + esc(ann.title) + '</span>' +
+        '<span class="ann-excerpt">' + esc(ann.body) + '</span>' +
+      '</span>';
+    item.addEventListener('click', () => openAnnouncement(ann));
+    list.appendChild(item);
+  });
+}
+
+function openAnnouncement(ann) {
+  $('#ann-dialog-title').textContent = ann.title;
+  $('#ann-dialog-body').textContent = ann.body;
+  const cat = $('#ann-dialog-cat');
+  cat.className = 'tag ' + categoryTagClass(ann.category);
+  cat.textContent = ann.category;
+  $('#ann-dialog-time').textContent = ann.time;
+
+  if (state.annRead.indexOf(ann.id) === -1) {
+    state.annRead.push(ann.id);
+    saveAnnRead();
+    renderAnnouncements();
+  }
+  $('#ann-dialog').showModal();
+}
+
+function markAllAnnouncementsRead() {
+  if (unreadCount() === 0) return;
+  state.annRead = ANNOUNCEMENTS.map((ann) => ann.id);
+  saveAnnRead();
+  renderAnnouncements();
+  toast('已全部标记为已读');
+}
+
+function switchView(name) {
+  state.view = name;
+  $$('.tab[data-view]').forEach((tab) => {
+    const on = tab.dataset.view === name;
+    tab.classList.toggle('is-active', on);
+    tab.setAttribute('aria-selected', String(on));
+  });
+  $('#view-home').classList.toggle('hidden', name !== 'home');
+  $('#view-students').classList.toggle('hidden', name !== 'students');
+}
+
+/* ============================================================
+   HTTP 封装
+   ============================================================ */
+async function api(method, path, options) {
+  options = options || {};
+  let url = apiBase() + path;
+  if (options.query) url += '?' + new URLSearchParams(options.query).toString();
+
+  const headers = Object.assign({}, options.headers || {});
+  let body;
+  if (options.json !== undefined) {
+    headers['Content-Type'] = 'application/json';
+    body = JSON.stringify(options.json);
+  }
+
+  const res = await fetch(url, { method, headers, body });
+  const text = await res.text();
+  let data = null;
+  if (text) {
+    try { data = JSON.parse(text); } catch (e) { data = text; }
+  }
+  return { ok: res.ok, status: res.status, data };
+}
+
+function errorText(data) {
+  if (!data) return '请求失败（无响应内容）';
+  if (typeof data === 'string') return data;
+  if (typeof data.detail === 'string') return data.detail;
+  if (Array.isArray(data.detail)) {
+    return data.detail.map((d) => {
+      const loc = Array.isArray(d.loc) ? d.loc.slice(1).join('.') : '';
+      return (loc ? loc + '：' : '') + (d.msg || '参数错误');
+    }).join('；');
+  }
+  if (data.msg) return data.msg;
+  return '请求失败';
+}
+
+/* ============================================================
+   Toast
+   ============================================================ */
+const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+const ICON_ALERT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+
+function toast(message, type) {
+  const ok = type !== 'error';
+  const el = document.createElement('div');
+  el.className = 'toast ' + (ok ? 'success' : 'error');
+  el.setAttribute('role', 'status');
+  el.innerHTML =
+    '<span class="toast-icon" aria-hidden="true">' + (ok ? ICON_CHECK : ICON_ALERT) + '</span>' +
+    '<p class="toast-text"></p>';
+  el.querySelector('.toast-text').innerHTML = '<strong>' + (ok ? '成功' : '失败') + '</strong> · ' + esc(message);
+  $('#toasts').appendChild(el);
+
+  setTimeout(() => {
+    el.classList.add('out');
+    setTimeout(() => el.remove(), 260);
+  }, 4200);
+}
+
+/* ============================================================
+   登录 / 登录态
+   ============================================================ */
+function showLoginError(message) {
+  const box = $('#login-error');
+  box.textContent = message;
+  box.classList.remove('hidden');
+}
+function clearLoginError() {
+  const box = $('#login-error');
+  box.classList.add('hidden');
+  box.textContent = '';
+}
+
+function setAuth(auth) {
+  state.auth = auth;
+  if (auth) writeLS(STORAGE.auth, auth); else removeLS(STORAGE.auth);
+}
+
+function enterApp() {
+  $('#login-view').classList.add('hidden');
+  $('#app').classList.remove('hidden');
+
+  const auth = state.auth || {};
+  $('#user-name').textContent = auth.name || ('学号 ' + auth.sid);
+  $('#user-role').textContent = auth.role === 'admin' ? '管理员 admin' : (auth.role || '—');
+  $('#user-avatar').textContent = (auth.name || '学').slice(0, 1);
+  try { $('#api-host').textContent = new URL(apiBase()).host; }
+  catch (e) { $('#api-host').textContent = apiBase(); }
+
+  const admin = isAdmin();
+  $('#add-btn').classList.toggle('hidden', !admin);
+  $('#readonly-banner').classList.toggle('hidden', admin);
+  $('#page-sub').textContent = admin
+    ? '查看、新增、编辑和删除学生信息'
+    : '查看学生信息（只读模式）';
+
+  $('#profile-sid').textContent = auth.sid || '—';
+  $('#profile-name').textContent = auth.name || '—';
+  $('#profile-role').textContent = auth.role || '—';
+  $('#profile-api').textContent = apiBase();
+  $('#quick-add').classList.toggle('hidden', !admin);
+
+  renderWelcome();
+  renderAnnouncements();
+  switchView('home');
+
+  state.page = 1;
+  loadStudents(1);
+}
+
+function enterLogin() {
+  $('#app').classList.add('hidden');
+  $('#login-view').classList.remove('hidden');
+}
+
+function startSession(auth) {
+  setAuth(auth);
+  enterApp();
+}
+
+/* 登录提交 */
+$('#login-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  clearLoginError();
+
+  const sid = $('#login-sid').value.trim();
+  const password = $('#login-pass').value;
+  if (!sid) { showLoginError('请输入学号'); $('#login-sid').focus(); return; }
+  if (!/^\d+$/.test(sid)) { showLoginError('学号必须是纯数字'); $('#login-sid').focus(); return; }
+  if (!password) { showLoginError('请输入密码'); $('#login-pass').focus(); return; }
+
+  const btn = $('#login-btn');
+  const original = btn.innerHTML;
+  btn.disabled = true;
+  btn.textContent = '登录中…';
+
+  try {
+    const login = await api('POST', '/login', { query: { sid: sid, password: password } });
+    if (!login.ok) {
+      showLoginError(errorText(login.data));
+      return;
+    }
+
+    // /login 只返回 msg，角色需要再查一次本人信息
+    let profile = null;
+    try {
+      const me = await api('GET', '/students/' + sid);
+      if (me.ok && me.data) profile = me.data;
+    } catch (e) { /* 查询失败不阻断登录，按非管理员处理 */ }
+
+    startSession({
+      sid: Number(sid),
+      name: profile ? profile.name : '',
+      role: profile ? profile.role : 'student'
+    });
+    toast('登录成功，欢迎回来' + (profile && profile.name ? '，' + profile.name : ''));
+  } catch (err) {
+    showLoginError('无法连接 ' + apiBase() + '，请确认后端已启动（python web.py）');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = original;
+  }
+});
+
+/* 密码可见性 */
+$('#pw-toggle').addEventListener('click', () => {
+  const input = $('#login-pass');
+  const show = input.type === 'password';
+  input.type = show ? 'text' : 'password';
+  $('#eye-open').classList.toggle('hidden', !show);
+  $('#eye-closed').classList.toggle('hidden', show);
+  $('#pw-toggle').setAttribute('aria-pressed', String(show));
+  $('#pw-toggle').setAttribute('aria-label', show ? '隐藏密码' : '显示密码');
+  input.focus();
+});
+
+/* 退出 */
+$('#logout-btn').addEventListener('click', () => {
+  setAuth(null);
+  state.items = [];
+  $('#tbody').innerHTML = '';
+  enterLogin();
+  toast('已退出登录');
+});
+
+/* ============================================================
+   学生列表：分页 + 渲染
+   ============================================================ */
+async function loadStudents(page) {
+  if (state.loading) return;
+  state.loading = true;
+  $('#table-wrap').setAttribute('aria-busy', 'true');
+  $('#footer-info').textContent = '加载中…';
+
+  try {
+    // limit 多取 1 条，用来判断是否还有下一页（后端没有 total 接口）
+    const result = await api('GET', '/students', {
+      query: { skip: (page - 1) * state.pageSize, limit: state.pageSize + 1 }
+    });
+
+    if (!result.ok) {
+      state.items = [];
+      state.hasNext = false;
+      renderTable();
+      renderPager();
+      $('#empty-text').textContent = '加载失败：' + errorText(result.data);
+      $('#empty-retry').classList.remove('hidden');
+      $('#table-empty').classList.remove('hidden');
+      return;
+    }
+
+    const rows = Array.isArray(result.data) ? result.data : [];
+    state.hasNext = rows.length > state.pageSize;
+    state.items = rows.slice(0, state.pageSize);
+    state.page = page;
+
+    renderTable();
+    renderPager();
+    $('#empty-retry').classList.add('hidden');
+  } catch (err) {
+    state.items = [];
+    state.hasNext = false;
+    renderTable();
+    renderPager();
+    $('#empty-text').textContent = '无法连接 ' + apiBase() + '，请确认后端已启动';
+    $('#empty-retry').classList.remove('hidden');
+    $('#table-empty').classList.remove('hidden');
+  } finally {
+    state.loading = false;
+    $('#table-wrap').setAttribute('aria-busy', 'false');
+  }
+}
+
+function renderTable() {
+  const tbody = $('#tbody');
+  tbody.innerHTML = '';
+  const admin = isAdmin();
+  const empty = $('#table-empty');
+
+  if (!state.items.length) {
+    empty.classList.remove('hidden');
+    if (!$('#empty-retry').classList.contains('hidden')) return;
+    $('#empty-text').textContent = '暂无学生，点击右上角「添加学生」创建第一条记录';
+    return;
+  }
+  empty.classList.add('hidden');
+
+  state.items.forEach((stu) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td class="cell-sid">' + esc(stu.sid) + '</td>' +
+      '<td class="cell-name">' + esc(stu.name) + '</td>' +
+      '<td>' + esc(stu.age) + '</td>' +
+      '<td>' + esc(stu.sex) + '</td>' +
+      '<td><span class="badge ' + (stu.role === 'admin' ? 'badge-admin' : 'badge-student') + '">' + esc(stu.role) + '</span></td>' +
+      '<td class="cell-actions"><span class="row-actions">' +
+        '<button type="button" class="btn btn-secondary btn-xs" data-act="edit"' + (admin ? '' : ' disabled') + '>编辑</button>' +
+        '<button type="button" class="btn btn-danger-ghost btn-xs" data-act="del"' + (admin ? '' : ' disabled') + '>删除</button>' +
+      '</span></td>';
+
+    tr.querySelector('[data-act="edit"]').addEventListener('click', () => openEditDialog(stu));
+    tr.querySelector('[data-act="del"]').addEventListener('click', () => openDeleteDialog(stu));
+    tbody.appendChild(tr);
+  });
+}
+
+function renderPager() {
+  const start = (state.page - 1) * state.pageSize + 1;
+  const end = start + state.items.length - 1;
+  const hasRows = state.items.length > 0;
+
+  $('#range-pill').textContent = hasRows ? start + '–' + end + ' 条' : '0 条';
+  $('#range-note').textContent = '第 ' + state.page + ' 页';
+  $('#prev-btn').disabled = state.page <= 1;
+  $('#next-btn').disabled = !state.hasNext;
+  $('#footer-info').textContent = hasRows
+    ? '本页 ' + state.items.length + ' 条 · 每页 ' + state.pageSize + ' 条'
+    : '暂无数据';
+}
+
+/* 刷新 / 分页 / 每页条数 */
+$('#refresh-btn').addEventListener('click', () => loadStudents(state.page));
+
+$('#prev-btn').addEventListener('click', () => {
+  if (state.page > 1) loadStudents(state.page - 1);
+});
+$('#next-btn').addEventListener('click', () => {
+  if (state.hasNext) loadStudents(state.page + 1);
+});
+$('#page-size').addEventListener('change', (event) => {
+  state.pageSize = Number(event.target.value);
+  loadStudents(1);
+});
+$('#empty-retry').addEventListener('click', () => loadStudents(state.page));
+
+/* ============================================================
+   添加 / 编辑对话框
+   ============================================================ */
+const studentDialog = $('#student-dialog');
+
+function openAddDialog() {
+  if (!isAdmin()) { toast('需要管理员账号才能添加学生', 'error'); return; }
+  state.dialogMode = 'add';
+  state.editingSid = null;
+
+  $('#student-dialog-title').textContent = '添加学生';
+  $('#student-dialog-sub').textContent = '创建一条新的学生记录，学号需唯一';
+  $('#f-sid').value = '';
+  $('#f-sid').readOnly = false;
+  $('#f-name').value = '';
+  $('#f-age').value = '';
+  $('#f-sex').value = '男';
+  $('#f-role').value = 'student';
+  $('#f-pass').value = '';
+  $('#f-pass-label').innerHTML = '密码 <span class="req">*</span>';
+  $('#f-pass').placeholder = '初始密码';
+  hideDialogError();
+  studentDialog.showModal();
+  setTimeout(() => $('#f-sid').focus(), 60);
+}
+
+function openEditDialog(stu) {
+  if (!isAdmin()) { toast('需要管理员账号才能编辑学生', 'error'); return; }
+  state.dialogMode = 'edit';
+  state.editingSid = stu.sid;
+
+  $('#student-dialog-title').textContent = '编辑学生';
+  $('#student-dialog-sub').textContent = '学号 ' + stu.sid + ' · 留空密码表示不修改';
+  $('#f-sid').value = stu.sid;
+  $('#f-sid').readOnly = true;
+  $('#f-name').value = stu.name || '';
+  $('#f-age').value = stu.age != null ? stu.age : '';
+  $('#f-sex').value = stu.sex === '女' ? '女' : '男';
+  $('#f-role').value = stu.role === 'admin' ? 'admin' : 'student';
+  $('#f-pass').value = '';
+  $('#f-pass-label').textContent = '新密码（可选）';
+  $('#f-pass').placeholder = '留空表示不修改';
+  hideDialogError();
+  studentDialog.showModal();
+  setTimeout(() => $('#f-name').focus(), 60);
+}
+
+function showDialogError(message) {
+  const box = $('#dialog-error');
+  box.textContent = message;
+  box.classList.remove('hidden');
+}
+function hideDialogError() {
+  const box = $('#dialog-error');
+  box.classList.add('hidden');
+  box.textContent = '';
+}
+
+$('#add-btn').addEventListener('click', openAddDialog);
+
+$('#student-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  hideDialogError();
+
+  const sid = $('#f-sid').value.trim();
+  const name = $('#f-name').value.trim();
+  const age = $('#f-age').value.trim();
+  const sex = $('#f-sex').value;
+  const role = $('#f-role').value;
+  const passwd = $('#f-pass').value;
+
+  if (!/^\d+$/.test(sid)) { showDialogError('学号必须是纯数字'); $('#f-sid').focus(); return; }
+  if (!name) { showDialogError('请填写姓名'); $('#f-name').focus(); return; }
+  if (!/^\d+$/.test(age)) { showDialogError('年龄必须是纯数字'); $('#f-age').focus(); return; }
+
+  const isEdit = state.dialogMode === 'edit';
+  const headers = { 'x-sid': String(state.auth ? state.auth.sid : '') };
+  let payload;
+  if (isEdit) {
+    payload = { name: name, age: Number(age), sex: sex, role: role };
+    if (passwd) payload.passwd = passwd;
+  } else {
+    if (!passwd) { showDialogError('请填写密码'); $('#f-pass').focus(); return; }
+    payload = { sid: Number(sid), passwd: passwd, name: name, age: Number(age), sex: sex, role: role };
+  }
+
+  const btn = $('#student-submit');
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '保存中…';
+
+  try {
+    const result = isEdit
+      ? await api('PATCH', '/students/' + state.editingSid, { json: payload, headers: headers })
+      : await api('POST', '/students', { json: payload, headers: headers });
+
+    if (!result.ok) {
+      showDialogError(errorText(result.data));
+      return;
+    }
+
+    studentDialog.close();
+    toast(isEdit ? '修改成功' : '添加成功');
+    loadStudents(state.page);
+  } catch (err) {
+    showDialogError('无法连接 ' + apiBase() + '，请确认后端已启动');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = original;
+  }
+});
+
+/* ============================================================
+   删除对话框
+   ============================================================ */
+const deleteDialog = $('#delete-dialog');
+
+function openDeleteDialog(stu) {
+  if (!isAdmin()) { toast('需要管理员账号才能删除学生', 'error'); return; }
+  state.deletingSid = stu.sid;
+  $('#delete-text').textContent = '确定要删除学号 ' + stu.sid + '（' + (stu.name || '') + '）吗？此操作不可恢复。';
+  deleteDialog.showModal();
+}
+
+$('#delete-confirm').addEventListener('click', async () => {
+  const sid = state.deletingSid;
+  if (!sid) return;
+
+  const btn = $('#delete-confirm');
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '删除中…';
+
+  try {
+    const result = await api('DELETE', '/students/' + sid, {
+      headers: { 'x-sid': String(state.auth ? state.auth.sid : '') }
+    });
+    if (!result.ok) {
+      toast('删除失败：' + errorText(result.data), 'error');
+      return;
+    }
+    deleteDialog.close();
+    toast('删除成功');
+    // 当前页只剩这一条且不是第一页时，回到上一页
+    if (state.items.length === 1 && state.page > 1) loadStudents(state.page - 1);
+    else loadStudents(state.page);
+  } catch (err) {
+    toast('无法连接 ' + apiBase() + '，请确认后端已启动', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = original;
+  }
+});
+
+/* 对话框通用关闭：按钮 / 点遮罩 */
+$$('dialog [data-close]').forEach((btn) => {
+  btn.addEventListener('click', () => btn.closest('dialog').close());
+});
+$$('dialog').forEach((dlg) => {
+  dlg.addEventListener('click', (event) => {
+    if (event.target === dlg) dlg.close();
+  });
+});
+
+/* ============================================================
+   工作台交互：视图切换、公告筛选、快捷操作
+   ============================================================ */
+$$('.tab[data-view]').forEach((tab) => {
+  tab.addEventListener('click', () => switchView(tab.dataset.view));
+});
+
+$$('.chip[data-cat]').forEach((chip) => {
+  chip.addEventListener('click', () => {
+    state.annCategory = chip.dataset.cat;
+    $$('.chip[data-cat]').forEach((c) => {
+      const on = c === chip;
+      c.classList.toggle('is-active', on);
+      c.setAttribute('aria-pressed', String(on));
+    });
+    renderAnnouncements();
+  });
+});
+
+$('#ann-mark-all').addEventListener('click', markAllAnnouncementsRead);
+
+$$('.quick-btn[data-goto]').forEach((btn) => {
+  btn.addEventListener('click', () => switchView(btn.dataset.goto));
+});
+
+$('#quick-add').addEventListener('click', () => {
+  switchView('students');
+  openAddDialog();
+});
+
+$('#quick-refresh').addEventListener('click', () => {
+  switchView('students');
+  loadStudents(state.page);
+});
+
+/* ============================================================
+   初始化
+   ============================================================ */
+(function init() {
+  state.baseUrl = readLS(STORAGE.base, null) || state.baseUrl;
+  if (state.baseUrl && !/^https?:\/\//i.test(state.baseUrl)) state.baseUrl = 'http://' + state.baseUrl;
+
+  state.auth = readLS(STORAGE.auth, null);
+
+  state.annRead = readLS(STORAGE.annRead, []);
+  if (!Array.isArray(state.annRead)) state.annRead = [];
+
+  $('#base-url').value = apiBase();
+  $('#base-url').addEventListener('change', () => {
+    const v = $('#base-url').value.trim();
+    state.baseUrl = (v || 'http://127.0.0.1:8080').replace(/\/+$/, '');
+    if (!/^https?:\/\//i.test(state.baseUrl)) state.baseUrl = 'http://' + state.baseUrl;
+    $('#base-url').value = apiBase();
+    writeLS(STORAGE.base, state.baseUrl);
+    toast('后端地址已更新为 ' + state.baseUrl);
+  });
+
+  if (state.auth && state.auth.sid) {
+    enterApp();
+  } else {
+    enterLogin();
+  }
+
+  // 未登录时按回车直接聚焦密码
+  $('#login-sid').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); $('#login-pass').focus(); }
+  });
+})();
+</script>
+</body>
+</html>
